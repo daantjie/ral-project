@@ -1,0 +1,20 @@
+#+TITLE: RAL project
+* DNA
+Given a sheet of paper with dots of radius 1.5cm,
+
+1. Get the coords of the dots; (probably with Mindstorm's colour sensor)
+2. Reconstruct the shape of [whatever caused the dots].
+
+* Rover
+Make...a rover.
+
+* Spectro
+A 1D version of the DNA project (so no, thanks).
+
+* ISIS
+(The microscope, not the organisation.)
+
+Make a robot which:
+
+1. Picks up an object (a *target*);
+2. Puts it down in a (very) specific place.
