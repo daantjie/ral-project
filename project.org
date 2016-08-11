@@ -1,20 +1,49 @@
 #+TITLE: RAL project
-* DNA
+* DONE Choose our project! 
+CLOSED: [2016-08-10 Wed 18:57]
+There are four possibilities.
+** DNA
 Given a sheet of paper with dots of radius 1.5cm,
 
 1. Get the coords of the dots; (probably with Mindstorm's colour sensor)
 2. Reconstruct the shape of [whatever caused the dots].
 
-* Rover
+** Rover
 Make...a rover.
 
-* Spectro
+** Spectro
 A 1D version of the DNA project (so no, thanks).
 
-* ISIS
+** ISIS
 (The microscope, not the organisation.)
 
 Make a robot which:
 
 1. Picks up an object (a *target*);
 2. Puts it down in a (very) specific place.
+* TODO Build ADiRe
+ADiRe from Automated Diffraction Reader. (ad-dye-yer)
+:PROPERTIES:
+:header-args: python :tangle ~/repos/ral-project/adire.py
+:END:
+
+We'll be using the NXT Python library, with Python 3.x. This will allow the
+computer to control Adire directly.
+#+begin_src python
+import nxt 
+#+end_src
+
+We'll need to identify our robot, to stop it being confused with other USB
+thingies like mice and keyboards.
+
+#+begin_src python
+b = ntx.locator.find_one_brick(name = 'adire')
+#+end_src
+
+
+** TODO "Linear Actuator'
+The colour sensor should initially move towards a feeler; on hitting the feeder,
+it should move back slightly. It's current position is it's origin.
+
+** TODO Feeder
+
