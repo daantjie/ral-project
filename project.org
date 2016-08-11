@@ -22,28 +22,184 @@ Make a robot which:
 1. Picks up an object (a *target*);
 2. Puts it down in a (very) specific place.
 * TODO Build ADiRe
-ADiRe from Automated Diffraction Reader. (ad-dye-yer)
 :PROPERTIES:
 :header-args: python :tangle ~/repos/ral-project/adire.py
+:END:      
+** Preamble
+:PROPERTIES:
+:header-args: python :tangle ~/repos/ral-project/main.py :padline no
+:END:      
+ADiRe from Automated Diffraction Reader. (ad-dye-yer)
+
+This is the preamble of the program, where we'll do all the imports and then set
+things in motion. This is definitely the ugly part.
+
+We'll be using the NXT Python library, with Python 3.x. This
+will allow the computer to control Adire directly.
+
+#+begin_src python
+#!/usr/bin/env python3
+import nxt
+#+end_src
+
+I've written a few classes for Adire, which I'll talk about in the rest of the
+sections, but I'll import them now.
+
+#+begin_src python
+import adire
+import eye
+import neck
+import tongue
+#+end_src
+
+Let's find Adire's control brick, and give it a name (to stop it being
+confused with other pesky USB thingies like mice and keyboards).
+
+#+begin_src python
+brick = ntx.locator.find_one_brick(name = 'adire')
+#+end_src
+
+
+On to the classes!
+
+** Adire
+:PROPERTIES:
+:header-args: python :tangle ~/repos/ral-project/adire.py
+:END:      
+
+Firstly, we'll need a core class for the whole program. It'll manage the job.
+
+#+begin_src python
+class Adire:
+
+    def __init__(self, eye, neck, tongue):
+        self.eye = eye
+        self.neck = neck
+        self.tongue = tongue
+#+end_src
+
+=eye= is Adire's light sensor, which is mounted onto a motor-powered belt -- the
+motor is (aptly) called =neck=. =tongue= is the motor which powers the feeder
+mechanism.
+
+Adire actually needs to work; so we'll make a =run()= method for it.
+
+#+begin_src python
+    def run(self):
+        data = self.scan()
+        self.analyse(data)
+#+end_src
+
+*** Scan
+The first thing I'm going to deal with is the =scan()= method. The basic process
+of scanning is thus.
+
+1. Take a reading from the eye.
+2. Get the neck to move along slightly.
+3. Unless the eye is at the end of the line, go to 1.
+4. Get the tongue to pull the paper in slightly.
+5. Unless the eye is at the bottom of the paper, go to 1.
+6. Return the readings.
+
+So let's get down to it!
+
+This is fairly self-explanatory. We initialise the =data= list, and scan lines
+until the end of the page, adding these lines into the =data= list.
+
+=data= is a two-dimensional array, so you could think of it as a matrix. (And we
+will!) Any element of that array is either =True= (black) or =False= (white). It
+makes sense to have it that way round, because what we are interested in is the
+black spots.
+
+#+begin_src python
+    def scan(self, resolution=5):
+        data = []
+        while True:
+            line = self.scanline(resolution)
+            data.append(line)
+            self.tongue.shift(resolution)
+            if self.tongue.endp():
+                line = self.scanline(resolution)
+                data.append(line)
+                break
+        return data
+
+#+end_src
+
+At a slightly lower level is the =scanline()= method. This manages things like
+reversing the motion of the neck after it reaches the end of a line, and
+making sure that, when the neck moves back, the data doesn't come in backwards.
+
+#+begin_src python
+    def scanline(self, resolution):
+        line = []
+        while True:
+            line.append(self.eye.blackp())
+            self.neck.shift(resolution)
+            if self.neck.endp():
+                line.append(self.eye.blackp())
+                break
+        if self.neck.backwardsp():
+            line.reverse()
+            self.neck.toggle_direction()
+        return line
+#+end_src
+** Organ
+:PROPERTIES:
+:header-args: python :tangle ~/repos/ral-project/organ.py
 :END:
 
-We'll be using the NXT Python library, with Python 3.x. This will allow the
-computer to control Adire directly.
-#+begin_src python
-import nxt 
-#+end_src
-
-We'll need to identify our robot, to stop it being confused with other USB
-thingies like mice and keyboards.
+Naturally, there will be shared traits between =Eye=, =Neck= and =Tongue=, and
+since repeating yourself is a Bad Thing, we'll use inheritance; meaning there
+has to be a base class for these three child classes. (And what better a name
+than =Organ=?)
 
 #+begin_src python
-b = ntx.locator.find_one_brick(name = 'adire')
+class Organ:
+
+    def __init__(self, innards):
+        self.innards = innards
+#+end_src
+
+Here, =innards= is NXT Python's representation of the thingie (might be a motor,
+or a sensor, or something else). For example, I might initialise an organ with
+innards of ~nxt.Motor(BRICK, nxt.PORT_A)~.
+
+That's actually it for =Organ=. Since the eye is quite different from any of the
+muscles, it restricts what we can do while keeping full generality.
+
+Let's change that a bit.
+
+** Muscle 
+:PROPERTIES:
+:header-args: python :tangle ~/repos/ral-project/muscle.py
+:END:
+
+Creating a dedicated =Muscle= class will allow us to use some more OO goodness
+with our motors. (We'll do the same with the eye and the finger in a mo'.)
+
+=Muscle= doesn't do anything interesting with =__init__=. This is just standard
+inheritance.
+
+#+begin_src python
+class Muscle (Organ):
+
+    def __init__(self, innards):
+        super().__init__(innards)
+#+end_src
+
+All muscles need to move. (Duh!) However, we'll make two methods to do this: a
+low-level one, and a high level one. The low level one will deal directly with
+the motor, and the high level one will give us a nicer interface (in milimetres,
+not degrees of rotation).
+
+#+begin_src python
+    def turn(self, angle, power=5):
+        self.innards.turn(power, angle)
 #+end_src
 
 
-** TODO "Linear Actuator'
-The colour sensor should initially move towards a feeler; on hitting the feeder,
-it should move back slightly. It's current position is it's origin.
 
-** TODO Feeder
 
+
+** Eye
